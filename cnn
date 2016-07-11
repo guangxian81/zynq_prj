@@ -1,1 +1,8 @@
-dfadsfadfvadgsdgdafsf
+C++ 
+  const分为顶层const和底层const。顶层const表示对象本身用const约束，底层conse表示对象指向用const约束。
+  所以变量、引用、指针用顶层const约束都表示变量、引用、指针本身是const，底层const一般是指引用和指针指向的对象是const,描述符合类型。
+  引用和指针的顶层const和底层const约束写法不同，对于指针来说：
+  const int *const p = i ;//左侧是底层const，右侧是顶层const。
+  const int &r = i;//全部是底层const，表示r不能再指向其他的变量。
+  注意底层const约束后东东只能赋值拷贝给底层const约束的东东，否则就会报错。
+  指针的底层const只是表示无法通过指针来修改变量，但还可以用变量本身来修改变量的值。
