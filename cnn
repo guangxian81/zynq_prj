@@ -11,10 +11,7 @@ parameter IDLE= 4'b001;
 parameter R_A=4b0010;
 parameter R_B=4'b0100;
 parameter R_J=4'b1000;
-always rst fifo_rden<=0;else if(a_width==0&&pat_cnt==2'b11)||(a_width==1&&pat_cnt==2'b01) fifo_rden《=1；》
-
  reg all_read_over ;
-
  reg jump2RB ;
  reg read_start_A_mark ;
  reg read_start_A ;
@@ -22,7 +19,6 @@ always rst fifo_rden<=0;else if(a_width==0&&pat_cnt==2'b11)||(a_width==1&&pat_cn
  reg [31:0] read_addr_B ;
  reg read_start_B ;
  reg read_start_B_mark ;
-
  reg read_B_again ;
  reg [1:0] RJ_cnt ;
  reg [15:0] read_B_cnt ;
@@ -44,12 +40,118 @@ always rst fifo_rden<=0;else if(a_width==0&&pat_cnt==2'b11)||(a_width==1&&pat_cn
  reg [7:0] i_port_rbytee_2d ;
  reg [7:0] i_port_rbytef_2d ;
  wire [31:0] read_addr ;
-
+    reg     [7:0]   ram_waddr_a ;
+    reg     ram_wren_a_2d;
+    reg     fifo_wren_1d;
+    reg fifo_wren;
+    reg     [127:0]i_port_rdata_1d;
+    wire    [127:0] ram_wdata;
+    wire    [127:0] fifo_wdata;
+    wire fifo_full              ;
+    wire fifo_afull             ;
+    reg fifo_rden;              
+    wire fifo_rden_valid        ;
+    wire fifo_empty             ;
+    wire fifo_aempty            ;
+    wire [127:0]fifo_rdata             ;
+    reg [127:0]ram_rdata_a_1d  ;
+    reg [1:0]pat_cnt ;
+    reg fifo_rden_valid_1d  ;
+    reg fifo_rden_valid_2d  ;
+    reg fifo_rden_valid_3d  ;
+    reg fifo_rden_valid_4d  ;
+    reg fifo_rden_valid_5d  ;
     wire    data_mark;
     wire    ram_rden_a;
     reg [8:0]read_cnt;
     reg[5:0]ram_raddr_a;
     reg [63:0]ram_rdata_a_2d;
     reg [63:0]ram_rdata_b_2d;
-    reg firstdata_mark;
-    reg lastdata_mark;
+    wire[15:0]byte_valid;
+    
+    
+               if(read_b_over==1'b1)
+                nxtstate            =               IDLE                    ;
+            else if(jump2RB==1'b1)
+            read_addr_A             <=              32'b0                   ;
+            read_addr_A             <=              A_addr                  ;
+            read_addr_B             <=              32'b0                   ;
+            read_addr_B             <=              B_addr                  ;
+            read_addr_B             <=              read_addr_B+B_stride    ;
+        else if (curstate==R_J) begin
+    end
+         else if (RJ_cnt==2'b11) begin
+    assign  read_en     =   (curstate==R_B)?fifo_afull:1'b1                 ;
+//两次赋值为0，一次要写的时候（初始化），一次写完的时候（更新地址方便再次读写？）。
+        else if (read_start_A==1'b1||read_B_again==1'b1) begin
+            fifo_wren_1d            <=              1'b0                    ;
+            fifo_wren_1d            <=              1'b1                    ;
+            fifo_wren_1d            <=              1'b0                    ;
+            fifo_wren               <=              1'b0                    ;
+            fifo_wren               <=              fifo_wren_1d            ;
+    assign  fifo_wdata      =   ram_wdata                                   ;
+
+// fifo_rdata在fifo_rden_valid 2个周期后有效，且只能保证在此周期有效，其他周期不做保证。
+    FIFO_TOP #(
+        .WIDTH              (128                    ),
+        .DEPTHBIT           (5                      ),
+        .AFULLSIZE          (15                     ),
+        .AEMPTYSIZE         (1                      )
+    )
+    U_FIFO_TOP(
+        .clk                (clk                    ),
+        .rst                (rst                    ),
+        .fifo_wren          (fifo_wren              ),
+        .fifo_full          (fifo_full              ),
+        .fifo_afull         (fifo_afull             ),
+        .fifo_rden          (fifo_rden              ),
+        .fifo_rden_valid    (fifo_rden_valid        ),
+        .fifo_empty         (fifo_empty             ),
+        .fifo_aempty        (fifo_aempty            ),
+        .fifo_wdata         (fifo_wdata             ),
+        .fifo_rdata         (fifo_rdata             )
+    always @(posedge clk or posedge rst)begin
+            pat_cnt                 <=          2'b0                        ;
+        else if (fifo_empty!=1'b1) begin
+            if((A_width==8&&pat_cnt==2'b11)||(A_width==1&&pat_cnt==2'b01))
+                pat_cnt             <=          2'b0                        ;
+            else
+                pat_cnt             <=          2'b0                        ;
+        else begin
+            pat_cnt                 <=          2'b0                        ;
+    always @(posedge clk or posedge rst)begin
+            fifo_rden               <=          1'b0                        ;
+        else if (A_width==0&&pat_cnt==2'b11&&fifo_empty!=1'b1) begin
+            fifo_rden               <=          1'b1                        ;
+        else if (A_width==1&&pat_cnt==2'b01&&fifo_empty!=1'b1) begin
+            fifo_rden               <=          1'b1                        ;
+        else begin
+            fifo_rden               <=          1'b0                        ;
+        end
+//fifo_rden_valid_2d适合数据对齐的
+// fifo_rden_valid_3d,fifo_rden_valid_4d,fifo_rden_valid_5d用来标记128bit数据里面的有效数据维
+    always @(posedge clk or posedge rst)begin
+        if (rst) begin
+            fifo_rden_valid_1d      <=          1'b0                        ;
+            fifo_rden_valid_2d      <=          1'b0                        ;
+            fifo_rden_valid_3d      <=          1'b0                        ;
+            fifo_rden_valid_4d      <=          1'b0                        ;
+            fifo_rden_valid_5d      <=          1'b0                        ;
+        end
+        else begin
+            fifo_rden_valid_1d      <=          fifo_rden_valid             ;
+            fifo_rden_valid_2d      <=          fifo_rden_valid_1d          ;
+            fifo_rden_valid_3d      <=          fifo_rden_valid_2d          ;
+            fifo_rden_valid_4d      <=          fifo_rden_valid_3d          ;
+            fifo_rden_valid_5d      <=          fifo_rden_valid_4d          ;
+        end
+    end
+
+    assign data_mark = (B_width==1'b0)?fifo_rden_valid_2d|fifo_rden_valid_3d|fifo_rden_valid_4d|fifo_rden_valid_5d:
+                                        fifo_rden_valid_2d|fifo_rden_valid_3d;
+    assign ram_rden_a = fifo_rden_valid |fifo_rden_valid_1d|fifo_rden_valid_2d|fifo_rden_valid_3d;
+        else if (data_mark==1'b1) begin
+            if(read_cnt==ARRAY_length-1'b1)
+                read_cnt            <=              9'b0                ;
+            else
+                read_cnt            <=              read_cnt+1'b1       ;
