@@ -12,3 +12,44 @@ parameter R_A=4b0010;
 parameter R_B=4'b0100;
 parameter R_J=4'b1000;
 always rst fifo_rden<=0;else if(a_width==0&&pat_cnt==2'b11)||(a_width==1&&pat_cnt==2'b01) fifo_rden《=1；》
+
+ reg all_read_over ;
+
+ reg jump2RB ;
+ reg read_start_A_mark ;
+ reg read_start_A ;
+ reg [31:0] read_addr_A ;
+ reg [31:0] read_addr_B ;
+ reg read_start_B ;
+ reg read_start_B_mark ;
+
+ reg read_B_again ;
+ reg [1:0] RJ_cnt ;
+ reg [15:0] read_B_cnt ;
+ reg ram_wren_a_1d ;
+ reg [7:0] i_port_rbyte0_2d ;
+ reg [7:0] i_port_rbyte1_2d ;
+ reg [7:0] i_port_rbyte2_2d ;
+ reg [7:0] i_port_rbyte3_2d ;
+ reg [7:0] i_port_rbyte4_2d ;
+ reg [7:0] i_port_rbyte5_2d ;
+ reg [7:0] i_port_rbyte6_2d ;
+ reg [7:0] i_port_rbyte7_2d ;
+ reg [7:0] i_port_rbyte8_2d ;
+ reg [7:0] i_port_rbyte9_2d ;
+ reg [7:0] i_port_rbytea_2d ;
+ reg [7:0] i_port_rbyteb_2d ;
+ reg [7:0] i_port_rbytec_2d ;
+ reg [7:0] i_port_rbyted_2d ;
+ reg [7:0] i_port_rbytee_2d ;
+ reg [7:0] i_port_rbytef_2d ;
+ wire [31:0] read_addr ;
+
+    wire    data_mark;
+    wire    ram_rden_a;
+    reg [8:0]read_cnt;
+    reg[5:0]ram_raddr_a;
+    reg [63:0]ram_rdata_a_2d;
+    reg [63:0]ram_rdata_b_2d;
+    reg firstdata_mark;
+    reg lastdata_mark;
